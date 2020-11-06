@@ -81,9 +81,9 @@ server.get("/", (req, res) => {
   `);
 });
 
-// Getting "/get/sample/all"
-server.get("/get/sample/all", async (req, res) => {
-  console.log("get request to /get/sample/all");
+// Getting "/get/sample"
+server.get("/get/players", async (req, res) => {
+  console.log("get request to /get/players");
 
   try {
     const client = new Client({
@@ -96,7 +96,7 @@ server.get("/get/sample/all", async (req, res) => {
 
     await client.connect();
 
-    client.query("SELECT * FROM sample2;", (err, resp) => {
+    client.query("SELECT * FROM players;", (err, resp) => {
       if (err) throw err;
       for (let row of resp.rows) {
         console.log(JSON.stringify(row));
@@ -118,12 +118,12 @@ server.get("/get/sample/all", async (req, res) => {
   }
 });
 
-// Getting "/post/sample"
-server.post("/post/sample", async (req, res) => {
-  console.log("get request to /post/sample");
+// Getting "/post/newplayer"
+server.post("/post/newplayer", async (req, res) => {
+  console.log("get request to /post/newplayer");
 
   // Get the data from the HTTP Post Request
-  const { name, date } = req.body;
+  const { name } = req.body;
 
   try {
     const client = new Client({
@@ -135,7 +135,7 @@ server.post("/post/sample", async (req, res) => {
     });
     await client.connect();
 
-    const query = `INSERT INTO sample2 (name, date) values ('${name}', '${date}');`;
+    const query = `INSERT INTO players (name, wins, points) values ('${name}', 0, 0);`;
     client.query(query, (err, resp) => {
       if (err) throw err;
       for (let row of resp.rows) {
@@ -155,162 +155,115 @@ server.post("/post/sample", async (req, res) => {
   }
 });
 
-// Post request to /login
-server.post("/user/login", async (req, res) => {
-  // Get username and password being passed in by the user
-  const { username, password } = req.body;
+// Getting "/post/newplayer"
+server.post("/post/games", async (req, res) => {
+  console.log("get request to /post/games");
 
-  console.log(
-    "Request Body:\n\tusername: " + username + "\n\tpassword:" + password
-  );
+  // Get the data from the HTTP Post Request
+  const { id } = req.body;
 
-  // Try creating the client and connecting to the database...
   try {
-    // Create the new client
     const client = new Client({
-      connectionString:
-        process.env.DATABASE_URL ||
-        "postgres://grqmgaksoppydv:fb8ad3a0d5ee4253fd83d6bfe915d3671f8ffcc233a69d036f81224daf4c75ea@ec2-52-202-106-147.compute-1.amazonaws.com:5432/dcfjir8k9sqakt",
-      ssl: true,
+      user: "yuridmitridubler",
+      host: "localhost",
+      database: "yuridmitridubler",
+      password: "",
+      port: 5432,
     });
-
-    // Attempt to connect the client to the database...
     await client.connect();
 
-    // Get all of the user information
-    const db_query = `SELECT userlogin.password, userinfo.userid, userinfo.first_name, userinfo.last_name, userinfo.email, userinfo.coin_amount, userlogin.username, userlogin.is_admin, userlogin.is_superadmin from userlogin, userinfo where userinfo.userid=userlogin.userid AND userlogin.username='${username}';`;
-
-    // Query the database
-    client.query(db_query, async (err, dbres) => {
-      console.log("Database Queried: " + db_query);
-      if (err) {
-        // ERROR QUERYING
-        console.log("Error during query process. Throwing error.");
-        client.end();
-        res.json({
-          text: "Failed to login. Error querying database.",
-          success: false,
-          logged_in: false,
-          userid: -1,
-          username: "",
-          first_name: "",
-          last_name: "",
-          coin_amount: -1,
-          is_admin: false,
-          is_superadmin: false,
-        });
-        throw err;
-      } else if (dbres.rows.length === 1) {
-        // DATABASE RETURNS A SINGLE ROW (USERNAME EXISTS)
-        console.log("Database returned the following data:\n");
-
-        // Log what the databse returned
-        for (let [key, value] of Object.entries(dbres.rows[0])) {
-          console.log(`\t${key}: ${value}`);
-        }
-
-        // Get the hashed password stored in the database...
-        const hashedPassword = dbres.rows[0].password;
-
-        // Use bcrypt.compare to compare the request-password with hashed-password (from the database)
-        if (await bcrypt.compare(password, hashedPassword)) {
-          // PASSWORDS MATCH
-          console.log("Passwords match!");
-
-          // Get all of the remaining information from the return query
-          const {
-            userid,
-            first_name,
-            last_name,
-            email,
-            coin_amount,
-            username,
-            is_admin,
-            is_superadmin,
-          } = dbres.rows[0];
-
-          // Set session values
-          console.log("Setting session values for " + username + ".");
-          req.session.userid = userid;
-          req.session.first_name = first_name;
-          req.session.last_name = last_name;
-          req.session.email = email;
-          req.session.coin_amount = coin_amount;
-          req.session.logged_in = true;
-          req.session.username = username;
-          req.session.is_admin = is_admin;
-          req.session.is_superadmin = is_superadmin;
-          //req.session.save(); // might be unneccesary
-
-          // Return JSON information in the response.
-          res.json({
-            text: "Credentials match! " + username + " is now logged in.",
-            logged_in: true,
-            success: true,
-            userid: userid,
-            first_name: first_name,
-            last_name: last_name,
-            email: email,
-            coin_amount: coin_amount,
-            username: username,
-            is_admin: is_admin,
-            is_superadmin: is_superadmin,
-          });
-        } else {
-          // PASSWORDS DON'T MATCH
-
-          // Return JSON information in the response.
-          res.json({
-            text: "Failed to log in. Credentials didn't match.",
-            logged_in: false,
-            success: false,
-            userid: -1,
-            username: "",
-            first_name: "",
-            last_name: "",
-            email: "",
-            coin_amount: -1,
-            is_admin: false,
-            is_superadmin: false,
-          });
-        }
-      } else {
-        // DATABASE DID NOT RETURN A SINGLE ROW --> USERNAME DOESN'T EXIST
-
-        // Return JSON information in the response.
-        res.json({
-          text: "Failed to log in. Username does not exist.",
-          success: false,
-          logged_in: false,
-          userid: -1,
-          username: "",
-          first_name: "",
-          last_name: "",
-          email: "",
-          coin_amount: -1,
-          is_admin: false,
-          is_superadmin: false,
-        });
+    const query = `select * from games where p1id=${id} or p2id=${id};`;
+    client.query(query, (err, resp) => {
+      if (err) throw err;
+      for (let row of resp.rows) {
+        console.log(JSON.stringify(row));
       }
-      // End the client.
+      res.json({
+        text: "Success! Connected to database & inserted values.",
+        success: true,
+        data: resp.rows,
+      });
       client.end();
     });
   } catch {
-    // Error was caught
-
-    // Return JSON information in the response.
     res.json({
-      text: "Username does not exist.",
-      logged_in: false,
+      text: "Failure! Could not connect to database.",
       success: false,
-      userid: -1,
-      username: "",
-      first_name: "",
-      last_name: "",
-      email: "",
-      coin_amount: -1,
-      is_admin: false,
-      is_superadmin: false,
+      data: null,
+    });
+  }
+});
+
+// Getting "/post/addgame"
+server.post("/post/addgame", async (req, res) => {
+  console.log("get request to /post/addgame");
+
+  // Get the data from the HTTP Post Request
+  const { p1id, p1score, p2id, p2score } = req.body;
+
+  try {
+    const client = new Client({
+      user: "yuridmitridubler",
+      host: "localhost",
+      database: "yuridmitridubler",
+      password: "",
+      port: 5432,
+    });
+    await client.connect();
+
+    const query = `INSERT INTO games (p1id, p1score, p2id, p2score, serverid) values (${p1id}, ${p1score}, ${p2id}, ${p2score}, ${p1id});`;
+    client.query(query, (err, resp) => {
+      if (err) throw err;
+      for (let row of resp.rows) {
+        console.log(JSON.stringify(row));
+      }
+      res.json({
+        text: "Success! Connected to database & inserted values.",
+        success: true,
+      });
+      client.end();
+    });
+  } catch {
+    res.json({
+      text: "Failure! Could not connect to database.",
+      success: false,
+    });
+  }
+});
+
+// Getting "/post/addgame"
+server.post("/post/updategame", async (req, res) => {
+  console.log("get request to /post/updategame");
+
+  // Get the data from the HTTP Post Request
+  const { gameID, p1score, p2score } = req.body;
+
+  try {
+    const client = new Client({
+      user: "yuridmitridubler",
+      host: "localhost",
+      database: "yuridmitridubler",
+      password: "",
+      port: 5432,
+    });
+    await client.connect();
+
+    const query = `update games set p1score=${p1score}, p2score=${p2score} where id=${gameID};`;
+    client.query(query, (err, resp) => {
+      if (err) throw err;
+      for (let row of resp.rows) {
+        console.log(JSON.stringify(row));
+      }
+      res.json({
+        text: "Success! Connected to database & updated values.",
+        success: true,
+      });
+      client.end();
+    });
+  } catch {
+    res.json({
+      text: "Failure! Could not connect to database.",
+      success: false,
     });
   }
 });
