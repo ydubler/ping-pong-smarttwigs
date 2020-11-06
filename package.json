@@ -1,0 +1,43 @@
+{
+  "name": "pingpong",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "babel src --out-dir dist/ && webpack",
+    "start": "node dist/server.js",
+    "dev-server": "nodemon --exec babel-node src/server.js --delay 500ms --ignore dist/",
+    "dev-bundle": "webpack -wd"
+  },
+  "author": "Yuri",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/cli": "^7.7.5",
+    "@babel/core": "^7.7.5",
+    "@babel/node": "^7.7.4",
+    "@babel/plugin-transform-async-to-generator": "^7.12.1",
+    "@babel/preset-env": "^7.7.6",
+    "@babel/preset-react": "^7.7.4",
+    "aphrodite": "^2.4.0",
+    "babel-loader": "^8.0.6",
+    "bcrypt": "^3.0.7",
+    "body-parser": "^1.19.0",
+    "css-loader": "^3.5.3",
+    "express": "^4.17.1",
+    "express-session": "^1.17.0",
+    "file-loader": "^5.0.2",
+    "ignore-styles": "^5.0.1",
+    "nodemon": "^2.0.2",
+    "pg": "^8.4.2",
+    "react": "^16.12.0",
+    "react-device-detect": "^1.11.14",
+    "react-dom": "^16.12.0",
+    "react-router-dom": "^5.1.2",
+    "regenerator-runtime": "^0.13.7",
+    "style-loader": "^1.2.0",
+    "url-loader": "^3.0.0",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10"
+  }
+}
